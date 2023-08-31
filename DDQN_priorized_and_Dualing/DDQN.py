@@ -108,6 +108,7 @@ class DQN:
             
     @tf.function     
     def forward(self, Z):
+        print(Z.shape)
         Z = self.net.forward(Z)
         return Z
     @tf.function
@@ -130,8 +131,8 @@ class DQN:
             a_possible = self.predict(x)
             return np.argmax(a_possible[0])
         
-    @tf.function
-    def cost(self, s, actions, G):
+    #@tf.function
+    def cost(self, s, actions, G, idxes, weights):
         """
         Parameters
         ----------
@@ -141,28 +142,30 @@ class DQN:
         """
         prediction = self.forward(s) # s is the states, predictions is the Q(a,s)
         # now we take into account the action values (Q(s,a)) which corresponds to the action took in the past 
+        # print(actions)
+        # input()
         predicted_q_s_a = prediction * tf.one_hot(actions, self.K) #elemwnt wise multiplication 
         
         selected_action_values = tf.reduce_sum(predicted_q_s_a, axis = [1])
-     
+        abs_delta = np.abs(G - selected_action_values) ## without margine 
 
         costi = tf.reduce_mean(
-                                    self.loss_func(y_true = G , y_pred = selected_action_values) 
-                                    )*0.5
-        # print(costi)
-        return costi 
+                                self.loss_func(y_true = G , y_pred = selected_action_values) * weights
+                                )*0.5
+
+        return costi, idxes, abs_delta 
     
-    @tf.function
-    def update_weights(self, states, actions, targets):
-        
+    #@tf.function
+    def update_weights(self, states, actions, targets, idxes, weights = None):
+        # print("actions:", actions)
         with tf.GradientTape(watch_accessed_variables = True) as tape:
-            cost_i  = self.cost(states, actions, targets)
+            cost_i, idxes,abs_delta  = self.cost(states, actions, targets,idxes, weights)
             
         gradients = tape.gradient(cost_i, self.net.trainable_params)
         
         self.optimizer.apply_gradients(zip(gradients, self.net.trainable_params))
         
-        return cost_i
+        return cost_i, idxes,abs_delta
     
     # @tf.function
     def copy_params_from(self, model):
@@ -215,11 +218,14 @@ class DDQN(object):
     def learn(self, experience_replay_buffer):
         # sample experiences
         # states, actions, rewards, next_states, dones, weights = experience_replay_buffer.get_minibatch()
-        states, actions, rewards, next_states, dones = experience_replay_buffer.get_minibatch()
+        states, actions, rewards, next_states, dones, idxes, weights = experience_replay_buffer.get_minibatch()
         # print(states.dtype)
         # print(next_states.dtype)
         # Calculate targets expected future rewards
-        
+        # print("actions:", actions)
+        # for i in [states, actions, rewards, next_states, dones, idxes, weights]:
+        #     print(np.shape(i))
+            
         next_Qs = self.target_model.predict(next_states).numpy() # in R(n*Num_actions)
         next_Qs_main_net = self.main_net.predict(next_states).numpy()
         # print(next_Qs)
@@ -230,14 +236,13 @@ class DDQN(object):
         # # next_Q  = np.amax(next_Qs, axis = 1) <--- this approach is described in https://www.nature.com/articles/nature14236.pdf (dqn with experience replay)
         #next_Q = [next_Qs[i][actions[i]] for i in range(len(actions))] ## as decribed in https://arxiv.org/pdf/1509.06461.pdf (original DDQN paper) to avoid over estimating (read that paper !!)
         next_Q = [next_Qs[i][np.argmax(next_Qs_main_net[i])] for i in range(len(actions))] # alittle bit different
-        # print(next_Q)
+        
         # time.sleep(1000)
         targets = rewards + np.invert(dones).astype(np.float32) * self.gamma * next_Q
         
         # Update model
-        cost_i = self.main_net.update_weights(states, actions, targets)
-        
-        return cost_i
+        cost_i,  idxes, abs_delta = self.main_net.update_weights(states, actions, targets, idxes, weights)
+        return cost_i, idxes, abs_delta
 
     def sample_action(self, state, eps = 0, training = None):
         # print(state.shape, "DDQN")

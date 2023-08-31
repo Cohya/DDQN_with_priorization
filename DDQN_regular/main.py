@@ -127,7 +127,7 @@ for _ in range(100):
         if iter_internal_game > 205:
             done = True
         
-        r_episode += r
+        r_episode += reward
         
         obs = next_observation
     r_test.append(r_episode)

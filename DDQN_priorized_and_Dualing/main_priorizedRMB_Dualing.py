@@ -2,7 +2,7 @@
 import gym 
 from DDQN import DDQN
 
-from Nets_keras import Ann
+from Nets_keras import AnnDualing_Opt1, AnnDualing_Opt2
 from Agent  import Agent
 from ProportionalPriorizationReplayBuffer import ProportionalPriorizationReplayBuffer
 import numpy as np 
@@ -19,7 +19,7 @@ env =  gym.make('CartPole-v1')
 D = len(env.observation_space.sample())
 K = env.action_space.n
 K = env.action_space.n
-net = Ann(input_shape = D, K = K )
+net = AnnDualing_Opt2(input_shape = D, K = K )
 
 ddqn = DDQN(net = net,
             number_of_actions= K,
@@ -52,7 +52,7 @@ copy_period = 50
 total_rewards_vec = []
 cost_vec = []
 N  = capacity * 4
-max_iteration_of_episode = 1000
+max_iteration_of_episode = 301 # was 1000
 for n in range(N):
     if n % 200 == 0:
         print(n, "/", N)
@@ -111,15 +111,15 @@ for n in range(N):
 
     if n % 20 == 0:
         print(f"R average 20: {np.mean(total_rewards_vec[-20:])}, eps: {eps}, Episode: {n}")
-        # if np.mean(total_rewards_vec[-20:]) >= 199:
-        #     break
+        if np.mean(total_rewards_vec[-20:]) >= 300: #and eps < 0.1 :
+            break
         
 plt.plot(total_rewards_vec, label = 'Accumulated rewards')
 plt.ylabel("Rewards")
 plt.xlabel("Episode") 
 smoothed_r =[]
-for i in range(len(total_rewards_vec)- 100):
-    smoothed_r.append(np.mean(total_rewards_vec[i:i+100]))
+for i in range(len(total_rewards_vec)- 20):
+    smoothed_r.append(np.mean(total_rewards_vec[i:i+20]))
     
 plt.plot(smoothed_r, label = 'smoothed accumulated rewards 100')
 plt.legend()
@@ -129,32 +129,32 @@ plt.legend()
      
 # trained_weights = agent.get_model_weights()
 
-# with open("train_weights_DDQN.pk", "wb") as file:
+# with open("train_weights_DDQN_dualing.pk", "wb") as file:
 #     pickle.dump(trained_weights, file)
 
-# with open("train_weights_DDQN.pk", "rb") as file:
+# with open("train_weights_DDQN_dualing.pk", "rb") as file:
 #     trained_weights_loded = pickle.load(file)
     
 # agent.load_given_weights(trained_weights_loded)
 
-# r_test = []
-# for _ in range(100):
-#     obs = env.reset()[0]
-#     done = False
-#     r_episode  = 0
-#     iter_internal_game = 0 
-#     while not done:
-#         state =obs #(1,4,1) ( history, D, channels)
-#         a = agent.sample_action(x = state, eps=0, training = False)
+r_test = []
+for _ in range(100):
+    obs = env.reset()[0]
+    done = False
+    r_episode  = 0
+    iter_internal_game = 0 
+    while not done:
+        state =obs #(1,4,1) ( history, D, channels)
+        a = agent.sample_action(x = state, eps=0, training = False)
         
-#         next_observation, reward, done, truncated,  info= env.step(action = a)
-#         iter_internal_game += 1
-#         if iter_internal_game > max_iteration_of_episode:
-#             done = True
+        next_observation, reward, done, truncated,  info= env.step(action = a)
+        iter_internal_game += 1
+        if iter_internal_game > max_iteration_of_episode:
+            done = True
         
-#         r_episode += reward
+        r_episode += reward
         
-#         obs = next_observation
-#     r_test.append(r_episode)
+        obs = next_observation
+    r_test.append(r_episode)
 
-# print("r_test average value:", np.mean(r_test))
+print("r_test average value:", np.mean(r_test))
