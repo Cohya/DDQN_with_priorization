@@ -19,7 +19,7 @@ def _scaled_noise(size, dtype):
     return tf.sign(x) * tf.sqrt(tf.abs(x))
 
 
-@tf.keras.utils.register_keras_serializable(package="Addons")
+# @tf.keras.utils.register_keras_serializable(package="Addons")
 class NoisyDense2(tf.keras.layers.Dense):
     """
     References:
@@ -239,9 +239,9 @@ class NoisyDense2(tf.keras.layers.Dense):
 
 
 
-layer = NoisyDense2(10)
+# layer = NoisyDense2(10)
 
-x = tf.random.normal(shape = (1,10))
+# x = tf.random.normal(shape = (1,10))
 
-y = layer(x, training =  False)
-y2 = layer(x, training = True)
+# y = layer(x, training =  False)
+# y2 = layer(x, training = True)

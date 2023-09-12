@@ -1,5 +1,5 @@
 
-import gym 
+import gymnasium as gym
 from DDQN import DDQN
 import argparse
 from Nets_keras import AnnDualing_Opt_distribution

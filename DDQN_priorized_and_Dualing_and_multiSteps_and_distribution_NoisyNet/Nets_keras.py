@@ -198,8 +198,8 @@ class AnnDualing_Opt_distribution(tf.keras.Model):
         self.d1 = NoisyDense2(40, activation=tf.nn.relu)#(x_inputs)
         self.d2 = NoisyDense2(40, activation=tf.nn.relu)#(x1)
 
-        self.val_layers = NoisyDense2(1 * num_atoms, activation=tf.identity)#(x2) # M
-        self.adv_layer = NoisyDense2(K * num_atoms, activation = tf.identity)#(x2) # AxM
+        self.val_layers = NoisyDense2(int(1 * num_atoms), activation=tf.identity)#(x2) # M
+        self.adv_layer = NoisyDense2(int(K * num_atoms), activation = tf.identity)#(x2) # AxM
         # N = adv.shape[0]
         self.reshape_adv = tf.keras.layers.Reshape((K,num_atoms))#(adv)
         ## Q(s,a) = V(s) + A(s,a)  - 1/|A| * sum(A(s,a_i))
