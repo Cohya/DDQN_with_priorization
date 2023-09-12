@@ -5,7 +5,7 @@ from tensorflow.keras import Input
 from tensorflow.keras.layers import Dense, LSTM, Dropout
 import numpy as np 
 import pickle 
-
+from NoisyLayer import NoisyDense2
 class Lstm_dual(object):
     def __init__(self, input_shape, K):
         # K - is output neurons number (last layer)
@@ -112,6 +112,7 @@ class AnnDualing_Opt1(object):
         self.model = Model(inputs = x_inputs, outputs = q_s_a)
         self.trainable_params = self.model.trainable_weights
 
+    
     def forward(self, x):
         return self.model.call(x)#self.model.apply(x)
     
@@ -194,11 +195,11 @@ class AnnDualing_Opt_distribution(tf.keras.Model):
         self.K  = K
         # input_shape = (np.prod(input_shape),)
         # x_inputs = Input(shape = input_shape)
-        self.d1 = Dense(40, activation=tf.nn.relu)#(x_inputs)
-        self.d2 = Dense(40, activation=tf.nn.relu)#(x1)
+        self.d1 = NoisyDense2(40, activation=tf.nn.relu)#(x_inputs)
+        self.d2 = NoisyDense2(40, activation=tf.nn.relu)#(x1)
 
-        self.val_layers = Dense(1 * num_atoms, activation=tf.identity)#(x2) # M
-        self.adv_layer = Dense(K * num_atoms, activation = tf.identity)#(x2) # AxM
+        self.val_layers = NoisyDense2(1 * num_atoms, activation=tf.identity)#(x2) # M
+        self.adv_layer = NoisyDense2(K * num_atoms, activation = tf.identity)#(x2) # AxM
         # N = adv.shape[0]
         self.reshape_adv = tf.keras.layers.Reshape((K,num_atoms))#(adv)
         ## Q(s,a) = V(s) + A(s,a)  - 1/|A| * sum(A(s,a_i))
@@ -212,16 +213,29 @@ class AnnDualing_Opt_distribution(tf.keras.Model):
         #####################
         
         self.trainable_params = self.trainable_variables
-
-    def call(self, x, log  = False):
+        
+    def reset_noise(self):
+        self.d1.reset_noise()
+        self.d2.reset_noise()
+        self.val_layers.reset_noise()
+        self.adv_layer.reset_noise()
+        
+    def remove_noise(self):
+        self.d1.remove_noise()
+        self.d2.remove_noise()
+        self.val_layers.remove_noise()
+        self.adv_layer.remove_noise()
+        print("removed noised")
+        
+    def call(self, x, log  = False, training = False):
         
         # input_shape = (np.prod(input_shape),)
         # x_inputs = Input(shape = input_shape)
-        x1 = self.d1(x)#
-        x2 = self.d2(x1) 
+        x1 = self.d1(x, training = training)#
+        x2 = self.d2(x1, training = training) 
 
-        val  = self.val_layers(x2) # M
-        adv = self.adv_layer(x2) # AxM
+        val  = self.val_layers(x2,training = training) # M
+        adv = self.adv_layer(x2,training = training) # AxM
         # N = adv.shape[0]
         adv = self.reshape_adv(adv) # (N, K,num_atoms)
         ## Q(s,a) = V(s) + A(s,a)  - 1/|A| * sum(A(s,a_i))

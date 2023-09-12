@@ -25,22 +25,30 @@ class DQN:
             print('DQN main net created!')
         elif scope == 'Traget_model':
             print("Traget DQN net created!")
-            
+         
+    def reset_noise(self):
+        self.net.reset_noise()
+        
+        
+    def remove_noise(self):
+        self.net.remove_noise()
+        
+        
     @tf.function     
-    def forward(self, Z, log=False):
+    def forward(self, Z, log=False, training = False):
         print("Z:",Z.shape)
-        q_s_a, cliped_dist = self.net(Z, log = log)
+        q_s_a, cliped_dist = self.net(Z, log = log, training = training)
         return q_s_a, cliped_dist
     
     @tf.function
-    def predict(self, x):
+    def predict(self, x, training = False):
         # print("predict:", x.shape)
         # x is the satate in our case
-        q_s_a, cliped_dist = self.forward(x)
+        q_s_a, cliped_dist = self.forward(x, training = training)
         return q_s_a, cliped_dist
     
     # @tf.function
-    def sample_action(self, x, eps):
+    def sample_action_epsilonBases(self, x, eps):
         if np.random.random() < eps:
             return np.random.choice(self.K)
         else:
@@ -54,6 +62,17 @@ class DQN:
             
             return np.argmax(q_s_a[0])
         
+    def sample_action(self, x, training):
+
+        x = tf.expand_dims(x, axis = 0)
+        # x = np.expand_dims(x, axis = 0)
+        x = x.numpy()
+        x = np.float32(x)
+        # x = tf.stop_gradient(x)
+        q_s_a, cliped_dist= self.predict(x, training = training)
+        
+        return np.argmax(q_s_a[0])
+    
     #@tf.function
     def cost(self, s, actions, G, idxes, weights):
         """
@@ -159,6 +178,19 @@ class DDQN(object):
         self.delta_z = self.support[1]-self.support[0]
         # self.delta_z = (args.Vmax - args.Vmin)/(num_atoms-1)
     # @tf.function
+    def remove_noise_main_net(self):
+        self.main_net.remove_noise()
+        
+    def remove_noise_target_net(self):
+        self.target_model.remove_noise() 
+        
+    def reset_main_net_noise(self):
+        self.main_net.reset_noise()
+        
+    def reset_target_net_noise(self):
+        self.target_model.reset_noise()
+        
+        
     def learn(self, experience_replay_buffer):
         # sample experiences
         # states, actions, rewards, next_states, dones, weights = experience_replay_buffer.get_minibatch()
@@ -173,6 +205,11 @@ class DDQN(object):
         # dns = self.support* ps_main # Distribution d_t+n = (z, p(s_t+n, ·; θonline))
         # q_s_a_main = tf.reduce_sum(dns, axis = 2)
         # # Perform argmax action selection using online network: argmax_a[(z, p(s_t+n, a; θonline))]
+        
+        """ I need to check if that is ok or not """
+        self.main_net.reset_noise()
+        q_s_a_main, _ = self.main_net.predict(next_states)
+        ##############################################
         selected_actions = tf.argmax(q_s_a_main, axis =1 ).numpy()
         
         batch_size = len(states)
@@ -242,9 +279,14 @@ class DDQN(object):
         cost_i,  idxes, abs_delta = self.main_net.update_weights(states, actions, targets, idxes, weights)
         return cost_i, idxes, abs_delta
 
-    def sample_action(self, state, eps = 0, training = None):
+    def sample_action_e_based(self, state, eps = 0, training = None):
         # print(state.shape, "DDQN")
         action = self.main_net.sample_action(state, eps = eps)
+        return action 
+    
+    def sample_action(self, state, training ):
+        # print(state.shape, "DDQN")
+        action = self.main_net.sample_action(state, training = training)
         return action 
     
     def save_weights(self):#, name ):
