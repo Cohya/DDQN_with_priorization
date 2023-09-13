@@ -12,9 +12,7 @@ import matplotlib.pyplot as plt
 from collections import deque # Doubly Ended Queue data structure 
 from Get_n_Steps import get_n_step_info
 
-    
-np.random.seed(1)
-tf.random.set_seed(1)
+
 
 num_atoms = 51#
 Vmax =   200
@@ -185,10 +183,15 @@ plt.plot(total_rewards_vec, label = 'Accumulated rewards')
 plt.ylabel("Rewards")
 plt.xlabel("Episode") 
 smoothed_r =[]
-for i in range(len(total_rewards_vec)- 20):
-    smoothed_r.append(np.mean(total_rewards_vec[i:i+20]))
-    
-plt.plot(smoothed_r, label = 'smoothed accumulated rewards 100')
+for i in range(len(total_rewards_vec)- 50):
+    smoothed_r.append(np.mean(total_rewards_vec[i:i+50]))
+
+smoothed_r100 =[]
+for i in range(len(total_rewards_vec)- 100):
+    smoothed_r100.append(np.mean(total_rewards_vec[i:i+100]))
+       
+plt.plot(smoothed_r, label = 'smoothed accumulated rewards 50')
+plt.plot(smoothed_r100, label = 'smoothed accumulated rewards 100')
 plt.legend()
 
 with open("total_rewards_vec.pk", "wb") as file:

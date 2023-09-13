@@ -6,6 +6,7 @@ from tensorflow.keras.layers import Dense, LSTM, Dropout
 import numpy as np 
 import pickle 
 from NoisyLayer import NoisyDense2
+
 class Lstm_dual(object):
     def __init__(self, input_shape, K):
         # K - is output neurons number (last layer)
