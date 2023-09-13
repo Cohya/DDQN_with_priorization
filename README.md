@@ -1,4 +1,4 @@
-#From DDQN and up to Rainbow
+##From DDQN and up to Rainbow
 
 1) DDQN
 2) DDQN+Prioritized Experience Replay 
@@ -8,7 +8,7 @@
 6) Rainbow: Priorized + DuelingDQN + multi-steps (n-steps) + Distributional Perspective + NoisyNet
 
 
-Related papers:
+****Related papers:
 
 Deep Reinforcement Learning with Double Q-learning: https://arxiv.org/abs/1509.06461
 
