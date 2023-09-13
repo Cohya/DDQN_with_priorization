@@ -1,4 +1,4 @@
-##From DDQN and up to Rainbow
+##From DDQN and up to Rainbow##
 
 1) DDQN
 2) DDQN+Prioritized Experience Replay 
