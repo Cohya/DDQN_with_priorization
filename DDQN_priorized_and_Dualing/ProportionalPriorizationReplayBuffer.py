@@ -125,7 +125,7 @@ class ProportionalPriorizationReplayBuffer(SumTree):
         # print("self.num_in_buffer:", self.num_in_buffer,  self.capacity)
         
     def get_max_p(self):
-        if self.num_in_buffer >= 1000:
+        if self.num_in_buffer >= self.capacity:
             p_max = np.max(self.tree[-self.capacity:])
             
         else:
@@ -145,7 +145,7 @@ class ProportionalPriorizationReplayBuffer(SumTree):
         is_weights = np.empty((self.batch_size, 1))
         self.beta = min(1., self.beta + self.beta_increment_per_sample)
         # calculate max_weight
-        if self.num_in_buffer >= 1000:
+        if self.num_in_buffer >= self.capacity:
             min_val = np.min(self.tree[-self.capacity:])
             min_prob = min_val / self.total_p
         else:
